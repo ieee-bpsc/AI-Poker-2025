@@ -5,10 +5,10 @@ import random
 
 
 class Suit(Enum):
-    HEARTS = "Hearts"
-    DIAMONDS = "Diamonds"
-    CLUBS = "Clubs"
-    SPADES = "Spades"
+    SPADES = 0
+    HEARTS = 1
+    DIAMONDS = 2
+    CLUBS = 3
 
 
 class Rank(Enum):
@@ -31,6 +31,12 @@ class Rank(Enum):
 class Card:
     rank: Rank
     suit: Suit
+
+    def get_index(self) -> int:
+        """
+        Returns the index of the card rank. Indexing starts from 1.
+        """
+        return (self.suit.value * 13) + self.rank.value - 1
     
     def __str__(self) -> str:
         rank_symbols = {
@@ -53,4 +59,7 @@ class Deck:
         random.shuffle(self.cards)
     
     def deal(self, num_cards: int = 1) -> List[Card]:
+        """
+        Deals num_cards cards from the deck, and discards them.
+        """
         return [self.cards.pop() for _ in range(min(num_cards, len(self.cards)))]

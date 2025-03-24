@@ -15,18 +15,19 @@ class GamePhase(Enum):
 
 
 class PokerGame:
-    def __init__(self, players: List[Player], big_blind: int):
+    def __init__(self, players: List[Player], big_blind: int, game_number: int = 0):
         self.players = players
         self.big_blind = big_blind
         self.deck = None
         self.community_cards = []
         self.pot = 0
-        self.current_bet = 0
+        self.current_bet = 0  # how much has been raised (includes big blind)
         self.phase = GamePhase.SETUP
         self.button_position = 0
         self.active_player_index = 0
-        self.min_raise = big_blind
         self.has_played = [False] * len(self.players)
+        self.action_history = []
+        self.game_number = game_number
 
     def start_new_hand(self):
         print("\n====== NEW HAND ======")
@@ -36,14 +37,13 @@ class PokerGame:
         self.pot = 0
         self.current_bet = 0
         self.phase = GamePhase.SETUP
-        self.min_raise = self.big_blind
 
-        # Reset player statuses
+        # Reset player_hand statuses
         for i, player in enumerate(self.players):
             player.reset_for_new_hand()
             self.has_played[i] = False if player.status == PlayerStatus.ACTIVE else True
 
-        # Move button to next player
+        # Move button to next player_hand
         self.button_position = (self.button_position + 1) % len(self.players)
 
         # Deal cards
@@ -58,7 +58,7 @@ class PokerGame:
         self._adjust_active_player_index()
 
         # Show game state
-        self._display_game_state()
+        self.display_game_state()
 
     def _deal_hole_cards(self):
         for player in self.players:
@@ -73,11 +73,11 @@ class PokerGame:
         if bb_player.stack > 0:
             action, amount = bb_player.take_action(PlayerAction.BET, self.big_blind)
             self.pot += amount
-            self.current_bet = amount
+            self.current_bet = self.big_blind
             print(f"{bb_player.name} posts big blind: {amount}")
 
     def _adjust_active_player_index(self):
-        # Find next active player
+        # Find next active player_hand
         original_index = self.active_player_index
         while not self.players[self.active_player_index].can_make_action():
             self.active_player_index = (self.active_player_index + 1) % len(self.players)
@@ -88,6 +88,7 @@ class PokerGame:
 
     def player_action(self, action: PlayerAction, amount: int = 0) -> bool:
         player = self.players[self.active_player_index]
+        amount = min(amount, player.stack)
 
         # Validate action
         if action == PlayerAction.CHECK and self.current_bet > player.bet_amount:
@@ -98,67 +99,77 @@ class PokerGame:
             amount = self.current_bet - player.bet_amount
 
         if action in [PlayerAction.BET, PlayerAction.RAISE]:
-            if self.current_bet == 0:
-                min_amount = 1  
-                action = PlayerAction.BET
-            else:
+            # For a bet, the minimum is the big blind
+            min_amount = self.big_blind
+
+            # For a raise, the minimum is the current bet plus the minimum raise amount
+            if self.current_bet > 0:
                 min_amount = self.current_bet
                 action = PlayerAction.RAISE
+            else:
+                action = PlayerAction.BET
 
-            if amount < min_amount:
+            if amount <= min_amount:
                 print(f"Minimum {action.value} is {min_amount}")
                 return False
-
-            # Update minimum raise
-            self.min_raise = amount - self.current_bet
 
             # Update current bet
             self.current_bet = amount
 
-        # Execute action
-        print(f"{player.name} {action.value}s", end="")
-        if action in [PlayerAction.BET, PlayerAction.RAISE, PlayerAction.CALL]:
-            print(f" {amount}")
-        else:
-            print()
+        if action == PlayerAction.ALL_IN:
+            if amount <= 0:
+                return False
+            if amount > self.current_bet:
+                self.current_bet = player.bet_amount
 
         actual_action, actual_amount = player.take_action(action, amount)
         self.pot += actual_amount
+        self.action_history.append((self.phase.value, self.active_player_index + 1, actual_action.value, actual_amount))
 
-        # Move to next player
+        # Execute action
+        print(f"{player.name} {actual_action.value}s", end="")
+        if action in [PlayerAction.BET, PlayerAction.RAISE, PlayerAction.CALL]:
+            print(f" {actual_amount}")
+        else:
+            print()
+
+        # Move to next player_hand
         self.has_played[self.active_player_index] = True
         self.active_player_index = (self.active_player_index + 1) % len(self.players)
 
         # Check if betting round is complete
-        if self._is_betting_round_complete():
-            self._advance_game_phase()
+        if self.is_betting_round_complete():
+            self.advance_game_phase()
         else:
             self._adjust_active_player_index()
 
         # Show updated game state
-        self._display_game_state()
+        self.display_game_state()
         return True
 
-    def _is_betting_round_complete(self) -> bool:
-        active_players = [p for p in self.players if p.status in [PlayerStatus.ACTIVE, PlayerStatus.ALL_IN]]
+    def is_betting_round_complete(self) -> bool:
+        for player in self.players:
+            if player.status in [PlayerStatus.FOLDED, PlayerStatus.ALL_IN]:
+                continue
+            if player.bet_amount != self.current_bet:
+                return False
+        return all(self.has_played)
 
-        # If only one active player (others folded), round is complete
-        if len([p for p in active_players if p.status == PlayerStatus.ACTIVE]) <= 1:
-            return True
-
-        # If every active player has had a chance to act at least once
-        if all(p.bet_amount == self.current_bet or p.status != PlayerStatus.ACTIVE for p in active_players):
-            if self.active_player_index == (self.button_position + 1) % len(self.players):
-                return True
-        
-        return False
-
-    def _advance_game_phase(self):
+    def advance_game_phase(self):
         # Reset bet amounts for the next betting round
+
+        if self.num_active_players() + self.num_all_in_players() == 1:  # all players folded except one
+            self.direct_showdown()  # go directly to showdown and declare winner
+            return
+
+        no_one_active = all([p.status in [PlayerStatus.ALL_IN, PlayerStatus.FOLDED] for p in self.players])
+        if no_one_active:  # all players other than folded players are all-in
+            self.all_in_showdown()  # more than one person are all-in and all others are folded
+            return
+
         for player in self.players:
             player.bet_amount = 0
         self.current_bet = 0
-        self.min_raise = self.big_blind
 
         # Move to the next phase
         if self.phase == GamePhase.PRE_FLOP:
@@ -175,17 +186,32 @@ class PokerGame:
             self._showdown()
             return
 
-        # Start betting with player after button
+        # Start betting with player_hand after button
         self.active_player_index = (self.button_position + 1) % len(self.players)
         self._adjust_active_player_index()
         self._reset_has_played()
+
+    def direct_showdown(self):  # direct to showdown
+        self.phase = GamePhase.SHOWDOWN
+        self._showdown()
+        return
+
+    def all_in_showdown(
+            self):  # if more than one players are all-in first deal sufficient community cards then go to showdown
+        num_remaining = 5 - len(self.community_cards)
+        if num_remaining > 0:
+            self.community_cards.extend(self.deck.deal(num_remaining))
+
+        self.phase = GamePhase.SHOWDOWN
+        self._showdown()
+        return
 
     def _showdown(self):
         # Evaluate hands for all players who haven't folded
         active_players = [p for p in self.players if p.status != PlayerStatus.FOLDED]
 
         if len(active_players) == 1:
-            # Only one player left, they win automatically
+            # Only one player_hand left, they win automatically
             winner = active_players[0]
             winner.stack += self.pot
             print(f"{winner.name} wins {self.pot} chips")
@@ -223,7 +249,7 @@ class PokerGame:
             player.stack += winnings
             print(f"{player.name} wins {winnings} chips with {best_result.hand_rank.name}")
 
-    def _display_game_state(self):
+    def display_game_state(self):
         print(f"\nPhase: {self.phase.value}")
         print(f"Pot: {self.pot}")
 
@@ -248,3 +274,70 @@ class PokerGame:
 
     def _reset_has_played(self):
         self.has_played = [False if player.status == PlayerStatus.ACTIVE else True for player in self.players]
+
+    def num_active_players(self) -> int:
+        return len([p for p in self.players if p.status == PlayerStatus.ACTIVE])
+
+    def num_all_in_players(self) -> int:  # players who are all in
+        return len([p for p in self.players if p.status == PlayerStatus.ALL_IN])
+
+    def get_player_input(self) -> bool:
+        player = self.players[self.active_player_index]
+        game_state = self.get_game_state()
+        action, amount = player.action(game_state, self.action_history)
+        return self.player_action(action, amount)
+
+    def get_game_state(self) -> list[int]:
+        """
+        Returns the current game state in the following structure:
+        <1. Hole Cards' Index>
+        card1
+        card2
+        <2. Community Cards' Index. 0 means not yet dealt>
+        card1
+        card2
+        card3
+        card4
+        card5
+        <3. Pot>
+        pot
+        <4. Current Raise Amount>
+        current_raise
+        <5. Number of players>
+        num_players
+        <6. Each player's stack>
+        stack1
+        stack2
+        stack3
+        stack4
+        <7. Blind>
+        blind
+        <8. Game number>
+        game_number
+        """
+        player = self.players[self.active_player_index]
+        player_cards = [card.get_index() for card in player.hole_cards] + (2 - len(player.hole_cards)) * [0]
+        community_cards = [card.get_index() for card in self.community_cards] + (5 - len(self.community_cards)) * [0]
+        return [
+            *player_cards,
+            *community_cards,
+            self.pot,
+            self.current_bet,
+            len(self.players),
+            *(p.stack for p in self.players),
+            self.big_blind,
+            self.game_number,
+        ]
+
+
+if __name__ == "__main__":
+    example_players = [
+        Player("Alice", 1000),
+        Player("Bob", 1000),
+        Player("Charlie", 1000),
+        Player("Dave", 1000),
+    ]
+    game = PokerGame(example_players, big_blind=20)
+    game.start_new_hand()
+    game.advance_game_phase()
+    print(game.get_game_state())
