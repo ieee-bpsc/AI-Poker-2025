@@ -14,7 +14,7 @@ Standard Texas Hold 'Em poker with 52 cards (no jokers) except for some minor ch
 To get started with the Poker Engine, first clone the repository using:
 
 ```bash
-git clone https://github.com/Tanish-0001/AI-Poker-2025.git
+git clone https://github.com/ieee-bpsc/AI-Poker-2025.git
 ```
 
 Then you can create a custom player by implementing a class that inherits from the base Player class, and implement the function ```action```. This function must return an action (of the type PlayerAction) and an amount. Your player instance must be created with the parameters name and stack. Note that if you are using ```__init__```, you must call ```super().__init__()``` with the parameters name and stack.
