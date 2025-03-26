@@ -32,6 +32,7 @@ class PokerGame:
     def start_new_hand(self):
         print("\n====== NEW HAND ======")
         # Reset game state
+        self.game_number += 1
         self.deck = Deck()
         self.community_cards = []
         self.pot = 0
