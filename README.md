@@ -14,7 +14,7 @@ Standard Texas Hold 'Em poker with 52 cards (no jokers) except for some minor ch
 To get started with the Poker Engine, first clone the repository using:
 
 ```bash
-git clone https://github.com/ieee-bpsc/AI-Poker-2025.git
+git clone https://github.com/Tanish-0001/AI-Poker-2025.git
 ```
 
 Then you can create a custom player by implementing a class that inherits from the base Player class, and implement the function ```action```. This function must return an action (of the type PlayerAction) and an amount. Your player instance must be created with the parameters name and stack. Note that if you are using ```__init__```, you must call ```super().__init__()``` with the parameters name and stack.
@@ -41,5 +41,33 @@ class MyPlayer(Player):
         else:
             return PlayerAction.ALL_IN, self.stack
 ```
+
+The game state that ```action``` receives is structured in the following way:
+- 1. Hole Cards' Index (suit order is spades, hearts, diamonds, clubs and rank order is 2, 3, ..., Q, K, Ace)
+- 2. Community Cards' Index. 0 means not yet dealt
+- 3. Pot
+- 4. Current Raise Amount
+- 5. Number of players
+- 6. Each player's stack
+- 7. Blind
+- 8. Game number
+
+For example, here is a sample game_state:
+```python
+[16, 7, 0, 0, 0, 0, 0, 20, 20, 4, 1000, 1000, 980, 1000, 20, 1]
+```
+Which means that the player has the cards with index 16 and 7 (which corresponds to the 4 of hearts and 7 of spades), the community cards are all unrevealed, the pot has $20, the current raise is $20 (which includes the blind), the number of players is 4 and they have $1000, $1000, $980, $1000 resepctively, the blind is $20 and the game number is 1.
+
+The action history is a list of tuples consisting of the following data: (phase, name, action, amount). Here is a sample action history:
+```python
+[('pre-flop', 'David', 'call', 20),
+('pre-flop', 'Alice', 'raise', 60),
+('pre-flop', 'Bob', 'fold', 0),
+('pre-flop', 'Charlie', 'fold', 0),
+('pre-flop', 'David', 'call', 40),
+('flop', 'David', 'check', 0),
+('flop', 'Alice', 'check', 0)]
+```
+Note that the action history does not include posting of the blind. The above action history follows a game where Charlie posts a blind of 20, followed by David calling 20, Alice raising to 60, Bob folding, Charlie folding, David calling 40, David checking, Alice checking.
 
 Note: If you find any bugs, please e-mail them to ieee.sb@pilani.bits-pilani.ac.in
