@@ -42,7 +42,7 @@ class MyPlayer(Player):
             return PlayerAction.ALL_IN, self.stack
 ```
 
-## Game State
+### Game State
 
 The game state that ```action``` receives is structured in the following way:
 - 1. Hole Cards' Index (suit order is spades, hearts, diamonds, clubs and rank order is 2, 3, ..., Q, K, Ace)
