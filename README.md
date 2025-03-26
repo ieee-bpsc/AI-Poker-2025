@@ -42,6 +42,8 @@ class MyPlayer(Player):
             return PlayerAction.ALL_IN, self.stack
 ```
 
+## Game State
+
 The game state that ```action``` receives is structured in the following way:
 - 1. Hole Cards' Index (suit order is spades, hearts, diamonds, clubs and rank order is 2, 3, ..., Q, K, Ace)
 - 2. Community Cards' Index. 0 means not yet dealt
@@ -57,6 +59,8 @@ For example, here is a sample game_state:
 [16, 7, 0, 0, 0, 0, 0, 20, 20, 4, 1000, 1000, 980, 1000, 20, 1]
 ```
 Which means that the player has the cards with index 16 and 7 (which corresponds to the 4 of hearts and 7 of spades), the community cards are all unrevealed, the pot has $20, the current raise is $20 (which includes the blind), the number of players is 4 and they have $1000, $1000, $980, $1000 resepctively, the blind is $20 and the game number is 1.
+
+### Action History
 
 The action history is a list of tuples consisting of the following data: (phase, name, action, amount). Here is a sample action history:
 ```python
