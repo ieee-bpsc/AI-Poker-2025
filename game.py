@@ -124,7 +124,7 @@ class PokerGame:
 
         actual_action, actual_amount = player.take_action(action, amount)
         self.pot += actual_amount
-        self.action_history.append((self.phase.value, self.active_player_index + 1, actual_action.value, actual_amount))
+        self.action_history.append((self.phase.value, player.name, actual_action.value, actual_amount))
 
         # Execute action
         print(f"{player.name} {actual_action.value}s", end="")
