@@ -45,20 +45,21 @@ class MyPlayer(Player):
 ### Game State
 
 The game state that ```action``` receives is structured in the following way:
-- 1. Hole Cards' Index (suit order is spades, hearts, diamonds, clubs and rank order is 2, 3, ..., Q, K, Ace)
-- 2. Community Cards' Index. 0 means not yet dealt
-- 3. Pot
-- 4. Current Raise Amount
-- 5. Number of players
-- 6. Each player's stack
-- 7. Blind
-- 8. Game number
+1. Hole Cards' Index (suit order is spades, hearts, diamonds, clubs and rank order is 2, 3, ..., Q, K, Ace)
+2. Community Cards' Index. 0 means not yet dealt
+3. Pot
+4. Current Raise Amount
+5. Blind
+6. Active Player Index
+7. Number of players
+8. Each player's stack
+9. Game number
 
 For example, here is a sample game_state:
 ```python
-[16, 7, 0, 0, 0, 0, 0, 20, 20, 4, 1000, 1000, 980, 1000, 20, 1]
+[16, 7, 0, 0, 0, 0, 0, 20, 20, 20, 3, 4, 1000, 1000, 980, 1000, 1]
 ```
-Which means that the player has the cards with index 16 and 7 (which corresponds to the 4 of hearts and 7 of spades), the community cards are all unrevealed, the pot has $20, the current raise is $20 (which includes the blind), the number of players is 4 and they have $1000, $1000, $980, $1000 resepctively, the blind is $20 and the game number is 1.
+Which means that the player has the cards with index 16 and 7 (which corresponds to the 4 of hearts and 7 of spades), the community cards are all unrevealed, the pot has $20, the current raise is $20 (which includes the blind), the blind is $20, the active player index is 3 (which means its the 4th player's turn), the number of players is 4 and they have $1000, $1000, $980, $1000 resepctively, and the game number is 1.
 
 ### Action History
 
