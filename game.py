@@ -304,16 +304,18 @@ class PokerGame:
         pot
         <4. Current Raise Amount>
         current_raise
-        <5. Number of players>
+        <5. Blind>
+        blind
+        <6. Active Player Index>
+        active_player_index
+        <7. Number of players>
         num_players
-        <6. Each player's stack>
+        <8. Each player's stack>
         stack1
         stack2
         stack3
         stack4
-        <7. Blind>
-        blind
-        <8. Game number>
+        <9. Game number>
         game_number
         """
         player = self.players[self.active_player_index]
@@ -324,9 +326,10 @@ class PokerGame:
             *community_cards,
             self.pot,
             self.current_bet,
+            self.big_blind,
+            self.active_player_index,
             len(self.players),
             *(p.stack for p in self.players),
-            self.big_blind,
             self.game_number,
         ]
 
