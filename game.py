@@ -15,7 +15,7 @@ class GamePhase(Enum):
 
 
 class PokerGame:
-    def __init__(self, players: List[Player], big_blind: int, game_number: int = 0):
+    def __init__(self, players: List[Player], big_blind: int, hand_number: int = 0):
         self.players = players
         self.big_blind = big_blind
         self.deck = None
@@ -27,12 +27,13 @@ class PokerGame:
         self.active_player_index = 0
         self.has_played = [False] * len(self.players)
         self.action_history = []
-        self.game_number = game_number
+        self.hand_number = hand_number
+        self.hand_winners = []
 
     def start_new_hand(self):
         print("\n====== NEW HAND ======")
         # Reset game state
-        self.game_number += 1
+        self.hand_number += 1
         self.deck = Deck()
         self.community_cards = []
         self.pot = 0
@@ -225,7 +226,7 @@ class PokerGame:
             # Only one player_hand left, they win automatically
             winner = active_players[0]
             winner.stack += self.pot
-            print(f"{winner.name} wins {self.pot} chips")
+            print(f"\n{winner.name} wins {self.pot} chips")
             return
 
         # Evaluate hands
@@ -259,6 +260,7 @@ class PokerGame:
 
             player.stack += winnings
             print(f"{player.name} wins {winnings} chips with {best_result.hand_rank.name}")
+            self.hand_winners.append((self.hand_number, player.name, winnings))
 
     def display_game_state(self):
         print(f"\nPhase: {self.phase.value}")
@@ -273,15 +275,9 @@ class PokerGame:
             if i == self.button_position:
                 position = "(BTN)"
 
-            cards = "[hidden]"
-            if player.status == PlayerStatus.FOLDED:
-                cards = "folded"
-            elif player.status == PlayerStatus.OUT:
-                cards = "out"
-
             active = "→ " if i == self.active_player_index and player.can_make_action() else "  "
 
-            print(f"{active}{player.name} {position}: ${player.stack} {cards} {player.status.value}")
+            print(f"{active}{player.name} {position}: ${player.stack} {player.status.value}")
 
     def _reset_has_played(self):
         self.has_played = [False if player.status == PlayerStatus.ACTIVE else True for player in self.players]
@@ -325,8 +321,8 @@ class PokerGame:
         stack2
         stack3
         stack4
-        <9. Game number>
-        game_number
+        <9. Hand number>
+        hand_number
         """
         player = self.players[self.active_player_index]
         player_cards = [card.get_index() for card in player.hole_cards] + (2 - len(player.hole_cards)) * [0]
@@ -340,7 +336,7 @@ class PokerGame:
             self.active_player_index,
             len(self.players),
             *(p.stack for p in self.players),
-            self.game_number,
+            self.hand_number,
         ]
 
 

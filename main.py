@@ -18,7 +18,7 @@ def run_game():
     game = PokerGame(players, big_blind=20)
 
     # Run several hands
-    for _ in range(5):
+    for _ in range(25):
         game_status = game.start_new_hand()
         if not game_status:
             print(f"Not enough players left in the game... game over.")
@@ -56,6 +56,10 @@ def run_game():
 
         print("\nHand complete. Starting new hand...")
         time.sleep(5)
+
+    print("Winners are:")
+    for g, winner, winning in game.hand_winners:
+        print(f"Game {g}: {winner} ({winning})")
 
 
 if __name__ == "__main__":
