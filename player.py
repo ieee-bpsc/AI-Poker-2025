@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 from dataclasses import dataclass
 from card import Card
 
@@ -51,6 +51,7 @@ class Player:
             self.stack -= max_bet
             self.bet_amount += max_bet
             if self.stack == 0:
+                self.status = PlayerStatus.ALL_IN
                 return PlayerAction.ALL_IN, max_bet
             return PlayerAction.CALL, max_bet
 
