@@ -1,10 +1,9 @@
 import os
 import sys
-import os
 import time
 from player import PlayerStatus, PlayerAction
 from game import PokerGame, GamePhase
-from baseplayers import InputPlayer
+from baseplayers import InputPlayer, RaisePlayer, FoldPlayer
 
 
 def run_game(num_hands):
@@ -70,11 +69,12 @@ def run_game(num_hands):
 
 
 if __name__ == "__main__":
-    start_time = time.time()
-    with open("logs_1.txt", "w", encoding="utf-8") as f:
-        sys.stdout = f
-        run_game(40)
-
-    sys.stdout = sys.__stdout__
-    end_time = time.time()
-    print("Game over. Total time taken:", end_time - start_time)
+    # start_time = time.time()
+    # with open("logs.txt", "w", encoding="utf-8") as f:
+    #     sys.stdout = f
+    #     run_game(40)
+    #
+    # sys.stdout = sys.__stdout__
+    # end_time = time.time()
+    # print("Game over. Total time taken:", end_time - start_time)
+    run_game(10)
