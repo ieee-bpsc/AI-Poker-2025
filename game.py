@@ -3,6 +3,7 @@ from typing import List
 from card import Card, Deck
 from player import Player, PlayerAction, PlayerStatus
 from hand_evaluator import HandEvaluator
+from math import ceil
 
 
 class GamePhase(Enum):
@@ -79,7 +80,7 @@ class PokerGame:
         bb_player = self.players[bb_position]
 
         while bb_player.status != PlayerStatus.ACTIVE:
-            bb_position = (bb_position + 1) % len(self.players)  # go to the next player position
+            bb_position = (bb_position + 1) % len(self.players) # go to the next player position
             bb_player = self.players[bb_position]
 
         if bb_player.stack > 0:
@@ -102,6 +103,12 @@ class PokerGame:
         player = self.players[self.active_player_index]
         amount = min(amount, player.stack)
 
+        if amount < 0:
+            print("Amount cannot be negative.")
+            return False
+
+        amount = ceil(amount)
+
         # Validate action
         if action == PlayerAction.CHECK and self.current_bet > player.bet_amount:
             print(f"Cannot check when there's a bet. Current bet: {self.current_bet}")
@@ -117,7 +124,6 @@ class PokerGame:
             # For a raise, the minimum is the current bet plus the minimum raise amount
             if self.current_bet > 0:
                 min_amount = self.current_bet
-                action = PlayerAction.RAISE
             else:
                 action = PlayerAction.BET
 
@@ -141,9 +147,11 @@ class PokerGame:
         # Execute action
         print(f"{player.name} {actual_action.value}s", end="")
         if action in [PlayerAction.BET, PlayerAction.RAISE, PlayerAction.CALL]:
-            print(f" {actual_amount}")
+            print(f"to {actual_amount}")
         else:
             print()
+
+        print(f"{player.name} puts {actual_amount} into the pot.")
 
         # Move to next player_hand
         self.has_played[self.active_player_index] = True

@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Tuple
 from dataclasses import dataclass
 from card import Card
+from math import ceil
 
 
 class PlayerAction(Enum):
@@ -42,6 +43,10 @@ class Player:
         return self.status in [PlayerStatus.ACTIVE]
 
     def take_action(self, action: PlayerAction, amount: int = 0) -> Tuple[PlayerAction, int]:
+        if amount < 0:
+            raise ValueError("Amount cannot be negative.")
+
+        amount = ceil(amount)
         if action == PlayerAction.FOLD:
             self.status = PlayerStatus.FOLDED
             return action, 0

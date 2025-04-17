@@ -1,24 +1,33 @@
 import os
+import sys
+import os
 import time
 from player import PlayerStatus, PlayerAction
 from game import PokerGame, GamePhase
 from baseplayers import InputPlayer
+from StatPlayer import StatPlayer
+from MonteCarloTS import ProbabilityPlayer
+from LLM_Players import LLMPlayer
+
+os.environ["LANGCHAIN_API_KEY"] = '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'
+google_api_key = 'AIzaSyCdz1R3YUmXysx9Mk3nqi_zmKwxh3C3tLo'
 
 
-def run_game():
+def run_game(num_hands):
 
     players = [
-        InputPlayer("Alice", 1000),
-        InputPlayer("Bob", 1000),
-        InputPlayer("Charlie", 1000),
-        InputPlayer("David", 1000),
+        ProbabilityPlayer("Alice", 1000),
+        StatPlayer("Bob", 1000),
+        ProbabilityPlayer("Charlie", 1000),
+        StatPlayer("David", 1000)
     ]
     
     # Create game
     game = PokerGame(players, big_blind=20)
 
     # Run several hands
-    for _ in range(25):
+    for _ in range(num_hands):
+        print(f"\nHand number {game.hand_number + 1}")
         game_status = game.start_new_hand()
         if not game_status:
             print(f"Not enough players left in the game... game over.")
@@ -44,7 +53,8 @@ def run_game():
 
             try:
                 is_successful = game.get_player_input()
-            except TypeError:
+            except Exception as e:
+                print(f"Player {player.name}'s turn failed: {e}")
                 is_successful = False
 
             if not is_successful:
@@ -55,12 +65,22 @@ def run_game():
             time.sleep(.5)
 
         print("\nHand complete. Starting new hand...")
-        time.sleep(5)
+        # time.sleep(5)
 
     print("Winners are:")
     for g, winner, winning in game.hand_winners:
         print(f"Game {g}: {winner} ({winning})")
+    print("\nFinal stack sizes are:")
+    for player in game.players:
+        print(f"{player.name}: ${player.stack}")
 
 
 if __name__ == "__main__":
-    run_game()
+    start_time = time.time()
+    with open("logs_1.txt", "w", encoding="utf-8") as f:
+        sys.stdout = f
+        run_game(40)
+
+    sys.stdout = sys.__stdout__
+    end_time = time.time()
+    print("Game over. Total time taken:", end_time - start_time)
